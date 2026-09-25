@@ -1,0 +1,10 @@
+{
+ "default": "fra",
+ "sets": [
+  {
+   "code": "fra",
+   "name": "Reality Fracture",
+   "released_at": "2026-10-02"
+  }
+ ]
+}

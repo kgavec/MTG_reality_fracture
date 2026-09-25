@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Guía de Limited · MTG</title>
+<meta name="description" content="Guía de Limited y prerelease generada desde datos de Scryfall: removal, trucos, arquetipos, curva y evaluación de pool.">
+<meta name="color-scheme" content="light dark">
+<link rel="preconnect" href="https://cards.scryfall.io" crossorigin>
+<link rel="preconnect" href="https://svgs.scryfall.io" crossorigin>
+<link rel="stylesheet" href="assets/app.css">
+<script>try{var t=localStorage.getItem('mtg-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <button class="icon-btn only-mobile" id="btn-menu" aria-label="Abrir secciones y filtros" aria-controls="side" aria-expanded="false">
+      <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <a class="brand" href="#top">
+      <img id="set-icon" alt="" width="26" height="26">
+      <span><b id="set-name">Cargando…</b><small id="set-sub"></small></span>
+    </a>
+    <span class="grow"></span>
+    <label class="search only-desktop">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Buscar carta o texto" autocomplete="off" aria-label="Buscar carta o texto">
+      <kbd>/</kbd>
+    </label>
+    <button class="icon-btn" id="btn-filters" aria-label="Filtros" aria-controls="side" aria-expanded="false">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="badge" id="filter-badge" hidden></span>
+    </button>
+    <button class="icon-btn" id="btn-theme" aria-label="Cambiar tema claro/oscuro">
+      <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+    </button>
+  </div>
+  <nav class="mtoc only-mobile" id="mtoc" aria-label="Secciones"></nav>
+</header>
+
+<div class="layout" id="top">
+  <aside class="side" id="side" aria-label="Navegación y filtros">
+    <div class="side-head only-mobile"><b>Secciones y filtros</b><button class="icon-btn" id="btn-close-side" aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <nav class="toc" id="toc" aria-label="Secciones"></nav>
+    <div class="filters" id="filters">
+      <div class="f-title">Filtros <button class="link" id="btn-reset" type="button">Limpiar</button></div>
+      <label class="search only-mobile">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q2" type="search" placeholder="Buscar carta o texto" autocomplete="off" aria-label="Buscar carta o texto">
+      </label>
+      <div class="f-group"><span class="f-label">Color</span><div class="f-row" id="f-color"></div></div>
+      <div class="f-group"><span class="f-label">Rareza</span><div class="f-row" id="f-rarity"></div></div>
+      <p class="f-hint" id="f-hint">Los filtros afectan a todas las cartas y tablas del reporte.</p>
+    </div>
+  </aside>
+
+  <main id="main" tabindex="-1">
+    <section class="hero" id="hero"></section>
+    <div id="sections"></div>
+    <footer class="foot" id="foot"></footer>
+  </main>
+</div>
+
+<button class="to-top" id="to-top" aria-label="Volver arriba" hidden><svg viewBox="0 0 24 24"><path d="m6 15 6-6 6 6"/></svg></button>
+<div class="scrim" id="scrim" hidden></div>
+
+<dialog class="card-dlg" id="card-dlg" aria-label="Ficha de carta">
+  <div class="dlg-in" id="dlg-body"></div>
+  <div class="dlg-nav">
+    <button class="icon-btn" data-nav="-1" aria-label="Carta anterior"><svg viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg></button>
+    <span id="dlg-pos"></span>
+    <button class="icon-btn" data-nav="1" aria-label="Carta siguiente"><svg viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg></button>
+    <span class="grow"></span>
+    <button class="icon-btn" id="dlg-close" aria-label="Cerrar ficha"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+</dialog>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+
+<!--DATA-->
+<script src="assets/app.js" defer></script>
+</body>
+</html>
