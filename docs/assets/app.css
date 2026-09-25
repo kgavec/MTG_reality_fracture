@@ -113,6 +113,9 @@ main{min-width:0;padding-top:20px;outline:0}
 }
 
 /* ---------- Hero ---------- */
+.modetabs{display:flex;gap:2px;background:var(--surface-3);border-radius:999px;padding:2px;margin-bottom:16px;width:fit-content}
+.modetab{all:unset;cursor:pointer;font-size:13px;font-weight:500;padding:7px 18px;border-radius:999px;color:var(--text-2)}
+.modetab[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .hero{border-radius:var(--r-lg);padding:26px 26px 22px;color:#fff;background:radial-gradient(900px 300px at 90% -30%,rgba(217,169,58,.35),transparent 60%),linear-gradient(135deg,var(--hero-1),var(--hero-2))}
 .hero-top{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
 .hero-top>img{width:60px;height:60px;filter:invert(1);flex:none}
@@ -131,6 +134,9 @@ main{min-width:0;padding-top:20px;outline:0}
 .hcard:hover{transform:translateY(-2px)}
 .hcard img{display:block;width:56px;height:78px;object-fit:cover}
 @media (max-width:600px){.hero{padding:20px 18px}.hero h1{font-size:23px}.hero-top>img{width:44px;height:44px}.kpi b{font-size:22px}.hcard img{width:44px;height:61px}}
+.cartas-view{margin-top:0}
+.cartas-filters{display:flex;flex-wrap:wrap;gap:16px 28px;margin-bottom:4px}
+.cartas-filters .f-group{margin-bottom:0;min-width:160px}
 
 /* ---------- Secciones ---------- */
 .sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);margin-top:18px;box-shadow:var(--shadow)}

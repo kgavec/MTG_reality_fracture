@@ -38,6 +38,7 @@ const imgSize = (u, size) => u ? u.replace('/normal/', `/${size}/`) : '';
 const icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 const ICONS = {
   pool:'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
+  cartas:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="9" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
   resumen:'<path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/>',
   colores:'<circle cx="12" cy="12" r="9"/><circle cx="9" cy="9" r="1.4"/><circle cx="15" cy="9" r="1.4"/><circle cx="8" cy="14" r="1.4"/><path d="M13 20a3 3 0 0 1 2-5h2a3 3 0 0 0 3-3"/>',
   arquetipos:'<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
@@ -61,21 +62,24 @@ const ICONS = {
 
 /* ---------- estado ---------- */
 let D, CARDS, BY_NAME;
-const state = { k: new Set(COLORS), r: new Set(RARITIES), q: '' };
+const state = { k: new Set(COLORS), r: new Set(RARITIES), q: '', view: 'analisis' };
 const local = {};                  // estado de chips por sección
 const rendered = new Set();        // secciones ya dibujadas
+let cartasRendered = false;
 
 function readURL() {
   const p = new URLSearchParams(location.search);
   if (p.get('c')) state.k = new Set(p.get('c').split('').filter(c => COLORS.includes(c)));
   if (p.get('r')) state.r = new Set(p.get('r').split(',').filter(r => RARITIES.includes(r)));
   if (p.get('q')) state.q = p.get('q').toLowerCase();
+  if (p.get('vista') === 'cartas') state.view = 'cartas';
 }
 function writeURL() {
   const p = new URLSearchParams(location.search);
   state.k.size === COLORS.length ? p.delete('c') : p.set('c', [...state.k].join(''));
   state.r.size === RARITIES.length ? p.delete('r') : p.set('r', [...state.r].join(','));
   state.q ? p.set('q', state.q) : p.delete('q');
+  state.view === 'cartas' ? p.set('vista', 'cartas') : p.delete('vista');
   const qs = p.toString();
   history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
 }
@@ -91,7 +95,7 @@ function table(cols, rows, o = {}) {
                                  && (!o.cardKey || passes(BY_NAME[r[o.cardKey]] || {k: 'C', r: 'common', _q: ''})));
   if (!shown.filter(r => !r._total).length) return '<p class="empty">Nada que mostrar con los filtros actuales.</p>';
   const th = cols.map((c, i) => `<th class="${c.num ? 'n' : ''}"${c.tip ? ` data-tip="${esc(c.tip)}"` : ''}>` +
-    `<button type="button" data-sort="${i}"><span class="lbl">${esc(c.label)}</span><span class="ar">↕</span></button></th>`).join('');
+    `<button type="button" data-sort="${i}"><span class="lbl">${c.labelHtml || esc(c.label)}</span><span class="ar">↕</span></button></th>`).join('');
   const tr = shown.map(r => '<tr' + (r._total ? ' class="total"' : '') + '>' + cols.map(c => {
     const v = r[c.key];
     const empty = v === null || v === undefined || v === '';
@@ -218,11 +222,21 @@ const SECTIONS = [
     const signs = CARDS.filter(c => c.par && c.r === 'uncommon').map(c => ({c, key: A.find(a => [...a.par].sort().join() === [...c.par].sort().join())}))
       .filter(x => x.key).sort((a, b) => A.indexOf(a.key) - A.indexOf(b.key));
     const sel = signs.filter(x => cur === '*' || x.key.par === cur).map(x => x.c);
+    const perfilByColor = Object.fromEntries(D.tablas.perfil.filter(r => r.color !== 'Total').map(r => [r.color, r]));
+    const scored = A.map(a => {
+      const [c1, c2] = a.par, p1 = perfilByColor[c1] || {}, p2 = perfilByColor[c2] || {};
+      return {...a, poder: a.removal * 2 + (p1.evasivas || 0) + (p2.evasivas || 0) + (p1.robo || 0) + (p2.robo || 0)};
+    }).sort((a, b) => b.poder - a.poder);
+    const maxPoder = scored[0]?.poder;
     return howto(`<p>Cada par de colores tiene un plan. Las <b>doradas infrecuentes</b> («cartas señal») muestran qué premia ese par: si abres una y tienes profundidad en esos colores, es buena dirección.</p>
-<p>Los temas vienen de la guía oficial de prerelease. <b>Removal en el par</b> suma el removal C/U de ambos colores más las doradas.</p>`) +
-      table([{key: 'par', label: 'Colores', render: v => pairPips(v)}, {key: 'gremio', label: 'Gremio'}, {key: 'tema', label: 'Plan de juego'},
+<p>Los temas vienen de la guía oficial de prerelease. <b>Removal en el par</b> suma el removal C/U de ambos colores más las doradas. <b>Poder</b> es una estimación (no una verdad absoluta): pondera x2 ese removal y le suma la evasión y el robo de cartas de sus dos colores, para aproximar qué tan bien equipado está el par para ganar partidas.</p>`) +
+      table([{key: 'par', label: 'Colores', render: v => pairPips(v)},
+             {key: 'gremio', label: 'Gremio', render: (v, r) => r.poder === maxPoder ? `⭐ ${esc(v)}` : esc(v)},
+             {key: 'tema', label: 'Plan de juego'},
              {key: 'doradas', label: 'Doradas', num: true}, {key: 'disponibles', label: 'Cartas C/U', num: true, tip: 'Comunes e infrecuentes de esos dos colores más las doradas del par'},
-             {key: 'removal', label: 'Removal en el par', num: true}], A, {bars: ['removal']}) +
+             {key: 'removal', label: 'Removal en el par', num: true},
+             {key: 'poder', label: 'Poder', num: true, tip: 'Removal en el par ×2, más evasivas y robo de cartas C/U de sus dos colores. Sirve para comparar pares entre sí, no como calificación absoluta'}],
+            scored, {bars: ['removal', 'poder']}) +
       '<h3>Cartas señal</h3>' + chips('arq', [{v: '*', label: 'Todas'}, ...A.map(a => ({v: a.par, label: `${pairPips(a.par)} ${a.gremio}`}))]) +
       grid(sel, c => { const a = A.find(x => [...x.par].sort().join() === [...c.par].sort().join()); return `${pairPips(a.par)} ${esc(a.gremio)}`; }, {id: 'arq'});
   }},
@@ -333,7 +347,7 @@ const SECTIONS = [
     const T = D.tablas, cols = COLORS.filter(k => T.mecanicas.some(r => r[k]));
     return howto(`<p>El glosario explica las mecánicas del set con el texto recordatorio de las propias cartas. La tabla cuenta en cuántas cartas aparece cada tema por color: te dice qué color empuja cada estrategia.</p>`) +
       `<h3>Glosario</h3><div class="gloss">${D.glosario.map(g => `<div class="gl"><b>${icon('tag')}${esc(g.nombre)}${g.cartas ? `<small>${g.cartas} cartas</small>` : ''}</b><p>${symbols(g.texto)}</p></div>`).join('')}</div>` +
-      '<h3>Mecánicas por color</h3>' + table([{key: 'mecanica', label: 'Mecánica / tema'}, ...cols.map(k => ({key: k, label: COLOR_NAME[k], num: true})),
+      '<h3>Mecánicas por color</h3>' + table([{key: 'mecanica', label: 'Mecánica / tema'}, ...cols.map(k => ({key: k, label: COLOR_NAME[k], labelHtml: pip(k), tip: COLOR_NAME[k], num: true})),
         {key: 'total', label: 'Total', num: true}], T.mecanicas, {heat: cols, bars: ['total']}) +
       `<details class="more"><summary>Keywords reconocidas por Scryfall (${T.keywords.length})</summary><div style="margin-top:10px">` +
       table([{key: 'keyword', label: 'Keyword'}, {key: 'cartas', label: 'Cartas', num: true}], T.keywords, {bars: ['cartas']}) + '</div></details>';
@@ -353,6 +367,14 @@ const SECTIONS = [
     const listOf = cards => cards.length
       ? `<p class="syn-list" data-list="${esc(cards.map(c => c.n).join('|'))}">${cards.slice(0, 6).map(c => `<button class="cn" data-card="${esc(c.n)}">${esc(c.n)}</button>`).join(', ')}</p>`
       : '<p class="empty">Ninguna en C/U de su color.</p>';
+    const INTER_PHRASE = {
+      removal: 'ya elimina criaturas rivales por su cuenta',
+      masivo: 'ya trae su propia limpieza de tablero masiva',
+      'daño': 'ya hace daño directo por su cuenta',
+      pelea: 'ya puede forzar peleas con criaturas rivales',
+      contra: 'ya contrarresta hechizos por su cuenta',
+      'rebote/tap': 'ya rebota o tapea criaturas rivales por su cuenta',
+    };
     return howto(`<p>Para cada una de tus 3 cartas con más puntaje (ver <a href="#bombas">Bombas</a>), esto arma un mazo <b>alrededor</b> de ella: qué necesita para sobrevivir hasta hacer efecto, y qué cartas C/U de su color comparten mecánica, la protegen o cierran la partida mientras ella trabaja. Las listas de "comparte mecánica" salen de las mismas etiquetas del glosario (ver <a href="#mecanicas">Mecánicas</a>).</p>`) +
       top.map(bomb => {
         const bombColors = bomb.par ? bomb.par.split('') : [bomb.k];
@@ -360,14 +382,33 @@ const SECTIONS = [
         const mec = bomb.mec?.length ? CARDS.filter(c => cu(c) && sameColor(c) && c.mec?.some(m => bomb.mec.includes(m))) : [];
         const removal = CARDS.filter(c => cu(c) && sameColor(c) && ['removal', 'masivo', 'daño', 'pelea'].includes(c.inter));
         const evasive = CARDS.filter(c => cu(c) && sameColor(c) && c.ev);
+
         const tips = [];
-        if (/Planeswalker/.test(bomb.t)) tips.push('Es un <b>planeswalker</b>: lo importante es que sobreviva un turno para empezar a generar ventaja. Priorizá curva baja y removal para despejarle el camino, y no lo juegues sin nada en mesa que lo proteja.');
-        else if (bomb.ev) tips.push('Es una <b>amenaza evasiva</b>: un plan más agresivo aprovecha mejor el reloj que impone.');
-        if (bomb.inter) tips.push(`Ya trae su propio ${(INTER[bomb.inter]?.[0] || 'removal').toLowerCase()}, así que no hace falta sobrecargar el mazo con más de eso — dejale espacio a otras piezas.`);
-        if (bomb.robo) tips.push('También te da ventaja de cartas por su cuenta, lo que empuja hacia un plan más lento y controlador.');
+        if (/Planeswalker/.test(bomb.t)) tips.push(`Es un <b>planeswalker de coste ${bomb.cmc}</b>: no hace nada por sí solo el turno que entra, así que necesita algo en mesa —un bloqueador o una amenaza que obligue al rival a defenderse— para llegar viva a tu próximo turno.`);
+        else if (bomb.tb === 'Creature') tips.push(bomb.ev
+          ? `Es una <b>criatura evasiva de coste ${bomb.cmc}</b>: en cuanto resiste un turno en mesa, empieza a cerrar la partida sola.`
+          : `Es una <b>criatura de coste ${bomb.cmc}</b> sin evasión propia: va a necesitar que el resto del mazo le abra camino con removal o bloqueadores para poder atacar.`);
+        else tips.push(`A un coste de ${bomb.cmc}, es una inversión fuerte de maná: protegela con removal e interacción hasta que puedas jugarla con seguridad.`);
+        if (bomb.inter) tips.push(`Además, ${INTER_PHRASE[bomb.inter] || 'ya interactúa con el rival por su cuenta'}, así que no hace falta sobrecargar el mazo con más de eso — dejale espacio a otras piezas.`);
+        if (bomb.robo) tips.push('También genera ventaja de cartas por sí sola, lo que hace más seguro construir un plan algo más lento y controlador a su alrededor.');
+        if (!bomb.inter && !bomb.robo) tips.push('No trae interacción ni robo de cartas propios: el resto del mazo tiene que cubrir esas dos cosas para que puedas llegar a jugarla y sacarle provecho.');
+
+        let partnerHtml = '';
+        if (!bomb.par && COLORS.includes(bomb.k) && bomb.k !== 'M' && bomb.k !== 'C') {
+          const rows = D.tablas.arquetipos.filter(a => a.par.includes(bomb.k));
+          const total = rows.reduce((s, a) => s + a.removal, 0) || 1;
+          const best = [...rows].sort((a, b) => b.removal - a.removal)[0];
+          if (best) {
+            const partner = best.par.replace(bomb.k, '');
+            const pct = Math.round(100 * best.removal / total);
+            partnerHtml = `<p class="syn-label">Mejor color compañero</p><p>${pip(partner)} ${COLOR_NAME[partner]} — ${esc(best.gremio)} concentra <b>${pct}%</b> del removal disponible entre los pares de ${COLOR_NAME[bomb.k]}.</p>`;
+          }
+        }
+
         return `<div class="synergy"><div class="synergy-card">${tile(bomb, c => `${rar(c.r)} · puntaje ${c.score}`)}</div>
           <div class="synergy-body"><h3>${bomb.par ? pairPips(bomb.par) : pip(bomb.k)} ${esc(bomb.n)}</h3>
           <ul>${tips.map(t => `<li>${t}</li>`).join('')}</ul>
+          ${partnerHtml}
           <p class="syn-label">Comparte mecánica en su color</p>${listOf(mec)}
           <p class="syn-label">Removal en su color para protegerla</p>${listOf(removal)}
           <p class="syn-label">Amenazas evasivas para cerrar mientras trabaja</p>${listOf(evasive)}
@@ -406,6 +447,9 @@ function mountShell() {
     `</div>` +
     `<div class="kpis">${K.map(k => `<div class="kpi"><span>${esc(k.label)}</span><b>${esc(k.valor)}</b><small>${esc(k.nota)}</small></div>`).join('')}</div>`;
 
+  $('#modetabs').innerHTML = [['analisis', 'Análisis'], ['cartas', 'Cartas']]
+    .map(([v, label]) => `<button class="modetab" type="button" data-mode="${v}" aria-pressed="${state.view === v}">${label}</button>`).join('');
+
   const secs = SECTIONS.filter(s => !s.when || s.when());
   $('#toc').innerHTML = secs.map(s => `<a href="#${s.id}" style="--ic:${s.color}">${icon(s.id)}${esc(s.nav)}</a>`).join('');
   $('#mtoc').innerHTML = secs.map(s => `<a href="#${s.id}">${esc(s.nav)}</a>`).join('');
@@ -436,7 +480,46 @@ function rerender() {
   // Redibuja solo lo ya visible; el resto se dibuja al llegar
   const secs = SECTIONS.filter(s => rendered.has(s.id));
   secs.forEach(renderSection);
+  if (state.view === 'cartas' && cartasRendered) renderCartasView();
   updateBadge();
+}
+
+const CARTAS_TIPOS = [['Creature', 'Criatura'], ['Instant', 'Instantáneo'], ['Sorcery', 'Conjuro'],
+  ['Artifact', 'Artefacto'], ['Enchantment', 'Encantamiento'], ['Planeswalker', 'Planeswalker'], ['Land', 'Tierra']];
+function renderCartasView() {
+  const body = $('#cartas-view');
+  if (!body) return;
+  const tipo = local.ct ?? '*', ccmc = local.ccmc ?? '*', cmec = local.cmec ?? '*', cer = local.cer ?? '*';
+  const tipos = CARTAS_TIPOS.filter(([tb]) => CARDS.some(c => c.tb === tb));
+  const mecs = D.glosario.map(g => g.nombre);
+  const passTipo = c => tipo === '*' || c.tb === tipo;
+  const passCmc = c => ccmc === '*' || (ccmc === '6' ? c.cmc >= 6 : c.cmc === +ccmc);
+  const passMec = c => cmec === '*' || (c.mec || []).includes(cmec);
+  const passEvRem = c => cer === '*' || (cer === 'ev' ? c.ev : !!c.inter);
+  const list = CARDS.filter(c => passes(c) && passTipo(c) && passCmc(c) && passMec(c) && passEvRem(c));
+  body.innerHTML = `<div class="sec-h"><span class="sec-ic" style="--ic:var(--accent)">${icon('cartas')}</span>
+      <div><h2>Todas las cartas</h2><p>${list.length} de ${CARDS.length} cartas del set con los filtros actuales</p></div></div>
+    <div class="sec-b">
+      <div class="cartas-filters">
+        <div class="f-group"><span class="f-label">Tipo</span>${chips('ct', [{v: '*', label: 'Todos'}, ...tipos.map(([tb, label]) => ({v: tb, label}))])}</div>
+        <div class="f-group"><span class="f-label">Coste (CMC)</span>${chips('ccmc', [{v: '*', label: 'Todos'}, ...['0', '1', '2', '3', '4', '5'].map(n => ({v: n, label: n})), {v: '6', label: '6+'}])}</div>
+        <div class="f-group"><span class="f-label">Mecánica</span>${chips('cmec', [{v: '*', label: 'Todas'}, ...mecs.map(m => ({v: m, label: m}))])}</div>
+        <div class="f-group"><span class="f-label">Evasión / interacción</span>${chips('cer', [{v: '*', label: 'Todas'}, {v: 'ev', label: 'Solo evasivas'}, {v: 'inter', label: 'Solo con interacción'}])}</div>
+      </div>
+      ${grid(list, c => `${rar(c.r)}${c.pt ? ` · ${esc(c.pt)}` : ''} · coste ${c.cmc}`, {id: 'cartas', limit: 60})}
+    </div>`;
+  cartasRendered = true;
+}
+function setMode(mode) {
+  state.view = mode;
+  $('#hero').hidden = mode !== 'analisis';
+  $('#sections').hidden = mode !== 'analisis';
+  $('#toc').hidden = mode !== 'analisis';
+  $('#mtoc').hidden = mode !== 'analisis';
+  $('#cartas-view').hidden = mode !== 'cartas';
+  $$('.modetab').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+  if (mode === 'cartas' && !cartasRendered) renderCartasView();
+  writeURL();
 }
 function updateBadge() {
   const n = (COLORS.length - state.k.size) + (RARITIES.length - state.r.size) + (state.q ? 1 : 0);
@@ -508,9 +591,22 @@ function wire(secs) {
   // Chips locales y "mostrar más"
   document.addEventListener('click', e => {
     const c = e.target.closest('[data-chip]');
-    if (c) { local[c.dataset.chip] = c.dataset.v; renderSection(SECTIONS.find(s => document.getElementById(s.id)?.contains(c))); return; }
+    if (c) {
+      local[c.dataset.chip] = c.dataset.v;
+      c.closest('#cartas-view') ? renderCartasView() : renderSection(SECTIONS.find(s => document.getElementById(s.id)?.contains(c)));
+      return;
+    }
     const m = e.target.closest('[data-more]');
-    if (m) { local[m.dataset.more + ':all'] = true; renderSection(SECTIONS.find(s => document.getElementById(s.id)?.contains(m))); }
+    if (m) {
+      local[m.dataset.more + ':all'] = true;
+      m.closest('#cartas-view') ? renderCartasView() : renderSection(SECTIONS.find(s => document.getElementById(s.id)?.contains(m)));
+    }
+  });
+
+  // Modo Análisis / Cartas
+  $('#modetabs').addEventListener('click', e => {
+    const b = e.target.closest('.modetab'); if (!b) return;
+    setMode(b.dataset.mode);
   });
 
   // Ordenar tablas
@@ -633,7 +729,8 @@ load().then(data => {
   const secs = mountShell();
   wire(secs);
   updateBadge();
-  if (location.hash) { const a = document.querySelector(`#toc a[href="${CSS.escape(location.hash)}"]`); a?.click(); }
+  setMode(state.view);
+  if (state.view === 'analisis' && location.hash) { const a = document.querySelector(`#toc a[href="${CSS.escape(location.hash)}"]`); a?.click(); }
 }).catch(err => {
   $('#sections').innerHTML = `<div class="sec" style="padding:20px"><h2>No se pudieron cargar los datos</h2>
     <p>${esc(err.message)}. Si abriste el archivo localmente, usa la versión de un solo archivo (<code>reportes/*.html</code>) o sirve la carpeta con <code>python -m http.server</code>.</p></div>`;
