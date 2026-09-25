@@ -437,6 +437,7 @@ function mountShell() {
   $('#set-name').textContent = S.name;
   $('#set-sub').textContent = `Guía de Limited · ${S.code.toUpperCase()}`;
   $('#set-icon').src = S.icon;
+  $('#favicon').href = S.icon;
   const n = CARDS.length, cu = CARDS.filter(c => c.r === 'common' || c.r === 'uncommon');
   const K = D.kpis;
   const destacadas = CARDS.filter(c => (c.r === 'rare' || c.r === 'mythic') && c.tb !== 'Land' && c.img)
