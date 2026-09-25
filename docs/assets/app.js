@@ -170,7 +170,10 @@ const SECTIONS = [
 { id: 'resumen', nav: 'Resumen', title: 'Lo esencial en 60 segundos', sub: 'Conclusiones calculadas desde los datos del set · C/U = comunes e infrecuentes', color: 'var(--gold)',
   render: () => howto(`<p>Todo el reporte mira sobre todo <b>comunes e infrecuentes (C/U)</b>: en 6 sobres abres ~40 comunes y ~20 infrecuentes, pero solo 6–7 raras. Tu mazo se construye con C/U.</p>
 <p>Usa los <b>filtros</b> (color, rareza, búsqueda; tecla <b>/</b>) para enfocar todo el reporte, y <b>haz clic en cualquier carta o nombre</b> para ver su ficha. Con ← → recorres las cartas de esa lista.</p>`) +
-    (D.novedades?.length ? `<div class="callout novedades"><b>Novedades de ${esc(D.set.name)}:</b> mecánicas nuevas, no vistas antes en Magic — ${D.novedades.map(n => `<b>${esc(n.nombre)}</b> (${esc(n.texto)})`).join(' · ')}</div>` : '') +
+    (D.novedades?.length ? `<div class="callout novedades"><div>` +
+      `<p><b>Novedades de ${esc(D.set.name)}:</b> mecánicas nuevas, no vistas antes en Magic — ${D.novedades.map(n => `<b>${esc(n.nombre)}</b> (${esc(n.texto)})`).join(' · ')}</p>` +
+      (D.reutilizadas?.length ? `<p class="sub">También reutiliza mecánicas ya existentes en Magic (para tener el panorama completo): ${D.reutilizadas.map(esc).join(', ')} — ver el glosario completo en <a href="#mecanicas">Mecánicas</a>.</p>` : '') +
+      `</div></div>` : '') +
     `<div class="insights">${D.insights.map(i => `<div class="ins"><span class="ii">${i.iconos.length ? i.iconos.map(pip).join('') : icon('stat')}</span><div><b>${esc(i.titulo)}</b><span>${esc(i.texto)}</span></div></div>`).join('')}</div>` },
 { id: 'colores', nav: 'Colores', title: 'Perfil de colores', sub: 'Qué ofrece cada color en comunes e infrecuentes', color: 'var(--U)',
   render() {
