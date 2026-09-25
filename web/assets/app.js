@@ -48,8 +48,14 @@ const ICONS = {
   mecanicas:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
   bombas:'<path d="m3 8 4 4 5-7 5 7 4-4-2 11H5z"/>',
   probabilidades:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.2"/><circle cx="16" cy="16" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="16" cy="8" r="1.2"/><circle cx="8" cy="16" r="1.2"/>',
-  stat:'<path d="M4 20V11M10 20V4M16 20v-6"/><path d="M2 20h20"/>',
   tag:'<path d="M6 3h12v18l-6-4-6 4z"/>',
+  bolt:'<path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-2-1-3-1-5 2 1 3 3 3 6a5 5 0 0 1-10 0c0-5 3-6 5-10z"/>',
+  heartcrack:'<path d="M12 20s-7-4.3-9.3-8.6C1.3 8.7 2.4 5 6 4.3c2.3-.5 4.4.7 6 3 1.6-2.3 3.7-3.5 6-3 3.6.7 4.7 4.4 3.3 7.1C19 15.7 12 20 12 20z"/><path d="m10.3 8 1.7 3-1.7 2 1.7 3"/>',
+  wind:'<path d="M3 8h11.5a2.5 2.5 0 1 0-2.5-2.5"/><path d="M3 13h15.5a2.5 2.5 0 1 1-2.5 2.5"/><path d="M3 18h9.5a2 2 0 1 0-2-2"/>',
+  cards:'<rect x="7" y="8" width="12" height="14" rx="2"/><path d="M10 8V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-2"/>',
+  ruler:'<rect x="3" y="9" width="18" height="7" rx="1.5"/><path d="M7 9v3M11 9v3M15 9v3M19 9v3"/>',
+  duo:'<circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/>',
+  flask:'<path d="M9 2h6M10 2v6.5L4.6 19a2 2 0 0 0 1.8 3h11.2a2 2 0 0 0 1.8-3L14 8.5V2"/><path d="M7 15h10"/>',
 };
 
 /* ---------- estado ---------- */
@@ -176,7 +182,7 @@ const SECTIONS = [
       `<p><b>Novedades de ${esc(D.set.name)}:</b> mecánicas nuevas, no vistas antes en Magic — ${D.novedades.map(n => `<b>${esc(n.nombre)}</b> (${esc(n.texto)})`).join(' · ')}</p>` +
       (D.reutilizadas?.length ? `<p class="sub">También reutiliza mecánicas ya existentes en Magic (para tener el panorama completo): ${D.reutilizadas.map(esc).join(', ')} — ver el glosario completo en <a href="#mecanicas">Mecánicas</a>.</p>` : '') +
       `</div></div>` : '') +
-    `<div class="insights">${D.insights.map(i => `<div class="ins"><span class="ii">${i.iconos.length ? i.iconos.map(pip).join('') : icon('stat')}</span><div><b>${esc(i.titulo)}</b><span>${esc(i.texto)}</span></div></div>`).join('')}</div>` },
+    `<div class="insights">${D.insights.map(i => `<div class="ins"><span class="ii">${icon(i.icono)}</span><div><b>${esc(i.titulo)}</b><span>${symbols(i.texto)}</span></div></div>`).join('')}</div>` },
 { id: 'colores', nav: 'Colores', title: 'Perfil de colores', sub: 'Qué ofrece cada color en comunes e infrecuentes', color: 'var(--U)',
   render() {
     const T = D.tablas;
@@ -358,11 +364,15 @@ function mountShell() {
   $('#set-icon').src = S.icon;
   const n = CARDS.length, cu = CARDS.filter(c => c.r === 'common' || c.r === 'uncommon');
   const K = D.kpis;
+  const destacadas = CARDS.filter(c => (c.r === 'rare' || c.r === 'mythic') && c.tb !== 'Land' && c.img)
+    .sort((a, b) => b.score - a.score).slice(0, 3);
   $('#hero').innerHTML = `<div class="hero-top"><img src="${esc(S.icon)}" alt="" width="60" height="60">
     <div><h1>${esc(S.name)} <span>· Guía de Limited</span></h1>
     <p>Sale el ${esc(S.released_at || '¿?')} · ${n} cartas · datos de Scryfall del ${esc(D.generado)}</p>
-    <div class="pips">${['W','U','B','R','G'].map(pip).join('')}</div></div></div>
-    <div class="kpis">${K.map(k => `<div class="kpi"><span>${esc(k.label)}</span><b>${esc(k.valor)}</b><small>${esc(k.nota)}</small></div>`).join('')}</div>`;
+    <div class="pips">${['W','U','B','R','G'].map(pip).join('')}</div></div></div>` +
+    (destacadas.length ? `<div class="hero-cards"><span class="hc-label">Cartas destacadas del set</span>
+      <div class="hero-cards-row" data-list="${esc(destacadas.map(c => c.n).join('|'))}">${destacadas.map(c => tile(c, x => `${rar(x.r)} · puntaje ${x.score}`)).join('')}</div></div>` : '') +
+    `<div class="kpis">${K.map(k => `<div class="kpi"><span>${esc(k.label)}</span><b>${esc(k.valor)}</b><small>${esc(k.nota)}</small></div>`).join('')}</div>`;
 
   const secs = SECTIONS.filter(s => !s.when || s.when());
   $('#toc').innerHTML = secs.map(s => `<a href="#${s.id}" style="--ic:${s.color}">${icon(s.id)}${esc(s.nav)}</a>`).join('');
