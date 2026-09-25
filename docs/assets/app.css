@@ -124,7 +124,7 @@ main{min-width:0;padding-top:20px;outline:0}
 .hero p{margin:6px 0 0;color:#d9d3e6;font-size:14px}
 .pips{display:flex;gap:6px;margin-top:10px}
 .pips img{width:22px;height:22px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:20px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:20px}
 .kpi{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--r);padding:12px 14px}
 .kpi span{display:block;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:#cfc8dd}
 .kpi b{display:block;font-size:26px;line-height:1.2;margin-top:2px;font-variant-numeric:tabular-nums}
@@ -133,7 +133,17 @@ main{min-width:0;padding-top:20px;outline:0}
 .hcard{all:unset;cursor:zoom-in;display:block;border-radius:4.75%/3.4%;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.35);flex:none;transition:transform .15s ease}
 .hcard:hover{transform:translateY(-2px)}
 .hcard img{display:block;width:56px;height:78px;object-fit:cover}
-@media (max-width:600px){.hero{padding:20px 18px}.hero h1{font-size:23px}.hero-top>img{width:44px;height:44px}.kpi b{font-size:22px}.hcard img{width:44px;height:61px}}
+@media (max-width:600px){
+  .hero{padding:20px 18px}
+  .hero h1{font-size:22px}
+  .hero-top>img{width:40px;height:40px}
+  .hero-top{gap:12px}
+  .hero-cards-row{margin-left:0;margin-top:2px}
+  .hcard img{width:40px;height:56px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .kpi{padding:10px 12px}
+  .kpi b{font-size:20px}
+}
 .cartas-view{margin-top:0}
 .cartas-filters{display:flex;flex-wrap:wrap;gap:16px 28px;margin-bottom:4px}
 .cartas-filters .f-group{margin-bottom:0;min-width:160px}
@@ -195,7 +205,15 @@ h3 .count{font-weight:500;color:var(--text-3);font-size:13px}
 .ins span{font-size:14.5px}
 
 /* ---------- Tablas (solo scroll horizontal) ---------- */
-.tbl-wrap{overflow-x:auto;overflow-y:hidden;border:1px solid var(--border);border-radius:var(--r);overscroll-behavior-x:contain}
+.tbl-wrap{overflow-x:auto;overflow-y:hidden;border:1px solid var(--border);border-radius:var(--r);overscroll-behavior-x:contain;
+  background:
+    linear-gradient(to right,var(--surface) 30%,rgba(255,255,255,0)) 0 0,
+    linear-gradient(to left,var(--surface) 30%,rgba(255,255,255,0)) 100% 0,
+    linear-gradient(to right,rgba(0,0,0,.2),rgba(0,0,0,0) 70%) 0 0,
+    linear-gradient(to left,rgba(0,0,0,.2),rgba(0,0,0,0) 70%) 100% 0;
+  background-repeat:no-repeat;
+  background-size:24px 100%,24px 100%,10px 100%,10px 100%;
+  background-attachment:local,local,scroll,scroll}
 table.tbl{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
 .tbl th{background:var(--surface-3);text-align:left;font-weight:600;font-size:12.5px;padding:0;white-space:nowrap;border-bottom:1px solid var(--border-2)}
 .tbl th button{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:4px;width:100%;padding:9px 12px;cursor:pointer}
