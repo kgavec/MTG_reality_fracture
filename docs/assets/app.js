@@ -156,7 +156,7 @@ const SECTIONS = [
     if (P.splash.length) h += `<h3>Candidatas a splash</h3><p class="empty">Cartas fuertes que piden un solo símbolo de un tercer color. Con 2–3 fuentes (duales, landcycling) suelen valer la pena.</p>` +
       table([{key: 'para', label: 'Para', render: v => pairPips(v)}, {key: 'splash', label: 'Color extra', render: v => colorCell(v)},
              colDefs.name(), colDefs.cost(), {key: 'peso', label: 'Peso', num: true}], P.splash, {cardKey: 'nombre'});
-    h += `<div class="callout">Fixing en tu pool: ${P.fixing.length ? P.fixing.map(n => `<button class="cn" data-card="${esc(n)}">${esc(n)}</button>`).join(', ') : 'ninguno'}</div>`;
+    h += `<div class="callout">Mana fixing en tu pool: ${P.fixing.length ? P.fixing.map(n => `<button class="cn" data-card="${esc(n)}">${esc(n)}</button>`).join(', ') : 'ninguno'}</div>`;
     const cnt = Object.fromEntries(P.cartas.map(x => [x.id, x]));
     const cards = P.cartas.map(x => CARDS[x.id]).sort((a, b) => cnt[b.id].peso - cnt[a.id].peso);
     for (const k of COLORS) {
@@ -189,7 +189,7 @@ const SECTIONS = [
       {key: 'otra', label: 'Contra / rebote', num: true, tip: 'Contrahechizos, devolver a la mano o tapear'},
       {key: 'trucos', label: 'Trucos combate', num: true, tip: 'Instantáneos que potencian o protegen a una criatura en combate'},
       {key: 'evasivas', label: 'Evasivas', num: true, tip: 'Criaturas con vuelo, amenaza, arrollar o imbloqueables'},
-      {key: 'robo', label: 'Roba cartas', num: true}, {key: 'fixing', label: 'Fixing', num: true, tip: 'Cartas que ayudan a conseguir maná de otro color: tierras duales, landcycling, tokens que producen maná'},
+      {key: 'robo', label: 'Roba cartas', num: true}, {key: 'fixing', label: 'Mana fixing', num: true, tip: 'Cartas que ayudan a conseguir maná de otro color: tierras duales, landcycling, tokens que producen maná'},
       {key: 'cmc_medio', label: 'Coste medio criaturas', num: true, tip: 'Valor de maná medio de las criaturas'},
       {key: 'cartas', label: 'Cartas C/U', num: true}], perfil,
       {colorKey: 'color', heat: ['criaturas', 'removal_duro', 'dano_pelea', 'otra', 'trucos', 'evasivas', 'robo', 'fixing']}) +
