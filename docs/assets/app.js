@@ -83,8 +83,10 @@ function writeURL() {
   const qs = p.toString();
   history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
 }
-const passes = c => state.k.has(c.k) && state.r.has(c.r) && (!state.q || c._q.includes(state.q));
-const passColor = k => !k || !COLORS.includes(k) || state.k.has(k);
+// Los filtros (color/rareza/búsqueda) solo aplican en la vista "Spoiler": el
+// Análisis siempre muestra todo, sin importar lo que esté seleccionado ahí.
+const passes = c => state.view !== 'cartas' || (state.k.has(c.k) && state.r.has(c.r) && (!state.q || c._q.includes(state.q)));
+const passColor = k => state.view !== 'cartas' || !k || !COLORS.includes(k) || state.k.has(k);
 
 /* ---------- componentes ---------- */
 function table(cols, rows, o = {}) {
@@ -127,19 +129,20 @@ function bars(items, {suffix = '', max} = {}) {
     `<span class="val">${fmt(i.v)}${suffix}</span>`).join('') + '</div>';
 }
 
-function tile(c, extra) {
+function tile(c, extra, {price} = {}) {
   const small = imgSize(c.img, 'small'), normal = c.img;
   const img = c.img ? `<img src="${esc(small)}" srcset="${esc(small)} 146w, ${esc(normal)} 488w" sizes="(max-width:600px) 34vw, 160px"
       width="146" height="204" loading="lazy" decoding="async" alt="" onerror="this.remove()">` : '';
+  const badge = price && c.pu != null ? `<span class="price-badge">$${c.pu.toFixed(2)}</span>` : '';
   return `<button class="card" type="button" data-card="${esc(c.n)}" style="--cc:var(--${c.k})" aria-label="${esc(c.n)}">` +
-    `<div class="frame"><div class="ph"><b>${esc(c.n)}</b>${mana(c.c)}<span>${esc(c.t)}</span><span>${esc(c.x.slice(0, 180))}</span></div>${img}</div>` +
+    `<div class="frame">${badge}<div class="ph"><b>${esc(c.n)}</b>${mana(c.c)}<span>${esc(c.t)}</span><span>${esc(c.x.slice(0, 180))}</span></div>${img}</div>` +
     `<div class="cap"><span><b>${esc(c.n)}</b>${extra ? extra(c) : `${rar(c.r)} · coste ${c.cmc}`}</span></div></button>`;
 }
-function grid(cards, extra, {limit = 36, id} = {}) {
+function grid(cards, extra, {limit = 36, id, price} = {}) {
   const list = cards.filter(passes);
   if (!list.length) return '<p class="empty">Ninguna carta con los filtros actuales.</p>';
   const lim = id && local[id + ':all'] ? Infinity : limit;
-  const html = list.slice(0, lim).map(c => tile(c, extra)).join('');
+  const html = list.slice(0, lim).map(c => tile(c, extra, {price})).join('');
   const more = list.length > lim ? `<button class="show-more" data-more="${id}">Mostrar ${list.length - lim} más</button>` : '';
   return `<div class="cards" data-list="${esc(list.map(c => c.n).join('|'))}">${html}</div>${more}`;
 }
@@ -447,7 +450,7 @@ function mountShell() {
     `</div>` +
     `<div class="kpis">${K.map(k => `<div class="kpi"><span>${esc(k.label)}</span><b>${esc(k.valor)}</b><small>${esc(k.nota)}</small></div>`).join('')}</div>`;
 
-  $('#modetabs').innerHTML = [['analisis', 'Análisis'], ['cartas', 'Cartas']]
+  $('#modetabs').innerHTML = [['analisis', 'Análisis'], ['cartas', 'Spoiler']]
     .map(([v, label]) => `<button class="modetab" type="button" data-mode="${v}" aria-pressed="${state.view === v}">${label}</button>`).join('');
 
   const secs = SECTIONS.filter(s => !s.when || s.when());
@@ -462,10 +465,22 @@ function mountShell() {
     Las etiquetas (removal, trucos de combate, mecánicas) se calculan leyendo el texto de las cartas y pueden fallar con redacciones poco comunes.` +
     (D.fuentes?.length ? `<br>Contexto: ${D.fuentes.map(f => `<a href="${esc(f.u)}" target="_blank" rel="noopener">${esc(f.t)}</a>`).join(' · ')}` : '');
 
-  // filtros
+  // filtros (solo tienen efecto real en la vista Spoiler; ver passes()/passColor())
   $('#f-color').innerHTML = COLORS.map(k => `<button class="tog sq" type="button" data-fk="${k}" aria-pressed="${state.k.has(k)}" aria-label="${COLOR_NAME[k]}" data-tip="${COLOR_NAME[k]}">${pip(k)}</button>`).join('');
   $('#f-rarity').innerHTML = RARITIES.map(r => `<button class="tog" type="button" data-fr="${r}" aria-pressed="${state.r.has(r)}">${rar(r)}</button>`).join('');
   $('#q').value = $('#q2').value = state.q;
+
+  const tipos = CARTAS_TIPOS.filter(([tb]) => CARDS.some(c => c.tb === tb));
+  $('#f-tipo').innerHTML = [{v: '*', label: 'Todos'}, ...tipos.map(([tb, label]) => ({v: tb, label}))]
+    .map(o => `<option value="${esc(o.v)}">${esc(o.label)}</option>`).join('');
+  $('#f-cmc').innerHTML = [{v: '*', label: 'Cualquier coste'}, ...['0', '1', '2', '3', '4', '5'].map(n => ({v: n, label: n})), {v: '6', label: '6+'}]
+    .map(o => `<option value="${esc(o.v)}">${esc(o.label)}</option>`).join('');
+  $('#f-mec').innerHTML = [{v: '*', label: 'Todas'}, ...D.tablas.mecanicas.map(m => ({v: m.mecanica, label: m.mecanica}))]
+    .map(o => `<option value="${esc(o.v)}">${esc(o.label)}</option>`).join('');
+  $('#f-evrem').innerHTML = ['*', 'ev', 'inter'].map(v =>
+    `<button class="tog" type="button" data-fer="${v}" aria-pressed="${(local.cer ?? '*') === v}">${{'*': 'Todas', ev: 'Evasivas', inter: 'Interacción'}[v]}</button>`).join('');
+  $('#f-sort').innerHTML = [['nombre', 'Nombre'], ['cmc', 'Coste'], ['rareza', 'Rareza'], ['precio', 'Precio']]
+    .map(([v, label]) => `<option value="${v}">${label}</option>`).join('');
   return secs;
 }
 
@@ -477,9 +492,8 @@ function renderSection(s) {
   rendered.add(s.id);
 }
 function rerender() {
-  // Redibuja solo lo ya visible; el resto se dibuja al llegar
-  const secs = SECTIONS.filter(s => rendered.has(s.id));
-  secs.forEach(renderSection);
+  // El Análisis no depende de los filtros (ver passes()/passColor()), así que
+  // un cambio de filtro solo necesita redibujar la vista Spoiler.
   if (state.view === 'cartas' && cartasRendered) renderCartasView();
   updateBadge();
 }
@@ -487,36 +501,30 @@ function rerender() {
 const CARTAS_TIPOS = [['Creature', 'Criatura'], ['Instant', 'Instantáneo'], ['Sorcery', 'Conjuro'],
   ['Artifact', 'Artefacto'], ['Enchantment', 'Encantamiento'], ['Planeswalker', 'Planeswalker'], ['Land', 'Tierra']];
 const RAREZA_ORDEN = {common: 0, uncommon: 1, rare: 2, mythic: 3};
+// Comparadores en orden "natural" ascendente; la dirección se aplica aparte (ver btn-sortdir)
 const CARTAS_SORT = {
   nombre: (a, b) => a.n.localeCompare(b.n),
   cmc: (a, b) => a.cmc - b.cmc || a.n.localeCompare(b.n),
-  rareza: (a, b) => RAREZA_ORDEN[b.r] - RAREZA_ORDEN[a.r] || a.n.localeCompare(b.n),
-  precio: (a, b) => (b.pu ?? -1) - (a.pu ?? -1) || a.n.localeCompare(b.n),
+  rareza: (a, b) => RAREZA_ORDEN[a.r] - RAREZA_ORDEN[b.r] || a.n.localeCompare(b.n),
+  precio: (a, b) => (a.pu ?? -1) - (b.pu ?? -1) || a.n.localeCompare(b.n),
 };
 function renderCartasView() {
   const body = $('#cartas-view');
   if (!body) return;
-  const tipo = local.ct ?? '*', ccmc = local.ccmc ?? '*', cmec = local.cmec ?? '*', cer = local.cer ?? '*', csort = local.csort ?? 'nombre';
-  const tipos = CARTAS_TIPOS.filter(([tb]) => CARDS.some(c => c.tb === tb));
-  const mecs = D.glosario.map(g => g.nombre);
+  const tipo = local.ct ?? '*', ccmc = local.ccmc ?? '*', cmec = local.cmec ?? '*', cer = local.cer ?? '*';
+  const csort = local.csort ?? 'nombre', dir = local.csortdir === 'desc' ? -1 : 1;
   const hasPrices = CARDS.some(c => c.pu != null);
   const passTipo = c => tipo === '*' || c.tb === tipo;
   const passCmc = c => ccmc === '*' || (ccmc === '6' ? c.cmc >= 6 : c.cmc === +ccmc);
   const passMec = c => cmec === '*' || (c.mec || []).includes(cmec);
   const passEvRem = c => cer === '*' || (cer === 'ev' ? c.ev : !!c.inter);
+  const sorter = CARTAS_SORT[csort] || CARTAS_SORT.nombre;
   const list = CARDS.filter(c => passes(c) && passTipo(c) && passCmc(c) && passMec(c) && passEvRem(c))
-    .sort(CARTAS_SORT[csort] || CARTAS_SORT.nombre);
+    .sort((a, b) => dir * sorter(a, b));
   body.innerHTML = `<div class="sec-h"><span class="sec-ic" style="--ic:var(--accent)">${icon('cartas')}</span>
       <div><h2>Todas las cartas</h2><p>${list.length} de ${CARDS.length} cartas del set con los filtros actuales${hasPrices ? '' : ' · precios no disponibles en esta exportación (corré los notebooks de nuevo para traerlos de Scryfall)'}</p></div></div>
     <div class="sec-b">
-      <div class="cartas-filters">
-        <div class="f-group"><span class="f-label">Tipo</span>${chips('ct', [{v: '*', label: 'Todos'}, ...tipos.map(([tb, label]) => ({v: tb, label}))])}</div>
-        <div class="f-group"><span class="f-label">Coste (CMC)</span>${chips('ccmc', [{v: '*', label: 'Todos'}, ...['0', '1', '2', '3', '4', '5'].map(n => ({v: n, label: n})), {v: '6', label: '6+'}])}</div>
-        <div class="f-group"><span class="f-label">Mecánica</span>${chips('cmec', [{v: '*', label: 'Todas'}, ...mecs.map(m => ({v: m, label: m}))])}</div>
-        <div class="f-group"><span class="f-label">Evasión / interacción</span>${chips('cer', [{v: '*', label: 'Todas'}, {v: 'ev', label: 'Solo evasivas'}, {v: 'inter', label: 'Solo con interacción'}])}</div>
-        <div class="f-group"><span class="f-label">Ordenar por</span>${chips('csort', [{v: 'nombre', label: 'Nombre'}, {v: 'cmc', label: 'Coste'}, {v: 'rareza', label: 'Rareza'}, {v: 'precio', label: 'Precio'}])}</div>
-      </div>
-      ${grid(list, c => `${rar(c.r)}${c.pt ? ` · ${esc(c.pt)}` : ''} · coste ${c.cmc}${c.pu != null ? ` · $${c.pu.toFixed(2)}` : ''}`, {id: 'cartas', limit: 60})}
+      ${grid(list, c => `${rar(c.r)}${c.pt ? ` · ${esc(c.pt)}` : ''} · coste ${c.cmc}`, {id: 'cartas', limit: 60, price: true})}
     </div>`;
   cartasRendered = true;
 }
@@ -527,8 +535,12 @@ function setMode(mode) {
   $('#toc').hidden = mode !== 'analisis';
   $('#mtoc').hidden = mode !== 'analisis';
   $('#cartas-view').hidden = mode !== 'cartas';
+  $('#filters').hidden = mode !== 'cartas';
+  $('#btn-filters').hidden = mode !== 'cartas';
+  $('#side-title').textContent = mode === 'cartas' ? 'Filtros' : 'Secciones';
   $$('.modetab').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
-  if (mode === 'cartas' && !cartasRendered) renderCartasView();
+  if (mode === 'cartas') renderCartasView();
+  updateBadge();
   writeURL();
 }
 function updateBadge() {
@@ -588,13 +600,33 @@ function wire(secs) {
     on ? set.delete(v) : set.add(v);
     writeURL(); rerender();
   });
+  document.addEventListener('click', e => {
+    const t = e.target.closest('[data-fer]'); if (!t) return;
+    local.cer = t.dataset.fer;
+    $$('[data-fer]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.fer === local.cer)));
+    rerender();
+  });
   const onQ = debounce(v => { state.q = v.trim().toLowerCase(); $('#q').value = $('#q2').value = v; writeURL(); rerender(); }, 160);
   $('#q').addEventListener('input', e => onQ(e.target.value));
   $('#q2').addEventListener('input', e => onQ(e.target.value));
+  $('#f-tipo').addEventListener('change', e => { local.ct = e.target.value; rerender(); });
+  $('#f-cmc').addEventListener('change', e => { local.ccmc = e.target.value; rerender(); });
+  $('#f-mec').addEventListener('change', e => { local.cmec = e.target.value; rerender(); });
+  $('#f-sort').addEventListener('change', e => { local.csort = e.target.value; rerender(); });
+  $('#btn-sortdir').addEventListener('click', () => {
+    const dir = local.csortdir === 'desc' ? 'asc' : 'desc';
+    local.csortdir = dir;
+    const b = $('#btn-sortdir'); b.dataset.dir = dir; b.setAttribute('aria-label', dir === 'asc' ? 'Orden ascendente' : 'Orden descendente');
+    rerender();
+  });
   $('#btn-reset').addEventListener('click', () => {
     state.k = new Set(COLORS); state.r = new Set(RARITIES); state.q = '';
     $('#q').value = $('#q2').value = '';
     $$('[data-fk],[data-fr]').forEach(b => b.setAttribute('aria-pressed', 'true'));
+    local.ct = local.ccmc = local.cmec = '*'; local.cer = '*'; local.csort = 'nombre'; local.csortdir = 'asc';
+    $('#f-tipo').value = $('#f-cmc').value = $('#f-mec').value = '*'; $('#f-sort').value = 'nombre';
+    $$('[data-fer]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.fer === '*')));
+    const sb = $('#btn-sortdir'); sb.dataset.dir = 'asc'; sb.setAttribute('aria-label', 'Orden ascendente');
     writeURL(); rerender();
   });
 

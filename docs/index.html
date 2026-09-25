@@ -23,6 +23,7 @@
       <img id="set-icon" alt="" width="26" height="26">
       <span><b id="set-name">Cargando…</b><small id="set-sub"></small></span>
     </a>
+    <nav class="modetabs" id="modetabs" aria-label="Vista"></nav>
     <span class="grow"></span>
     <label class="search only-desktop">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -41,9 +42,9 @@
 
 <div class="layout" id="top">
   <aside class="side" id="side" aria-label="Navegación y filtros">
-    <div class="side-head only-mobile"><b>Secciones y filtros</b><button class="icon-btn" id="btn-close-side" aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="side-head only-mobile"><b id="side-title">Secciones</b><button class="icon-btn" id="btn-close-side" aria-label="Cerrar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
     <nav class="toc" id="toc" aria-label="Secciones"></nav>
-    <div class="filters" id="filters">
+    <div class="filters" id="filters" hidden>
       <div class="f-title">Filtros <button class="link" id="btn-reset" type="button">Limpiar</button></div>
       <label class="search only-mobile">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -51,12 +52,23 @@
       </label>
       <div class="f-group"><span class="f-label">Color</span><div class="f-row" id="f-color"></div></div>
       <div class="f-group"><span class="f-label">Rareza</span><div class="f-row" id="f-rarity"></div></div>
-      <p class="f-hint" id="f-hint">Los filtros afectan a todas las cartas y tablas del reporte.</p>
+      <div class="f-group"><span class="f-label">Tipo</span><select class="f-select" id="f-tipo"></select></div>
+      <div class="f-group"><span class="f-label">Coste (CMC)</span><select class="f-select" id="f-cmc"></select></div>
+      <div class="f-group"><span class="f-label">Mecánica</span><select class="f-select" id="f-mec"></select></div>
+      <div class="f-group"><span class="f-label">Evasión / interacción</span><div class="f-row" id="f-evrem"></div></div>
+      <div class="f-group"><span class="f-label">Ordenar por</span>
+        <div class="sort-row">
+          <select class="f-select" id="f-sort"></select>
+          <button class="icon-btn" type="button" id="btn-sortdir" data-dir="asc" aria-label="Orden ascendente">
+            <svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          </button>
+        </div>
+      </div>
+      <p class="f-hint" id="f-hint">Los filtros afectan a todas las cartas del explorador.</p>
     </div>
   </aside>
 
   <main id="main" tabindex="-1">
-    <nav class="modetabs" id="modetabs" aria-label="Vista"></nav>
     <section class="hero" id="hero"></section>
     <div id="sections"></div>
     <section class="cartas-view sec" id="cartas-view" hidden></section>
