@@ -486,27 +486,37 @@ function rerender() {
 
 const CARTAS_TIPOS = [['Creature', 'Criatura'], ['Instant', 'Instantáneo'], ['Sorcery', 'Conjuro'],
   ['Artifact', 'Artefacto'], ['Enchantment', 'Encantamiento'], ['Planeswalker', 'Planeswalker'], ['Land', 'Tierra']];
+const RAREZA_ORDEN = {common: 0, uncommon: 1, rare: 2, mythic: 3};
+const CARTAS_SORT = {
+  nombre: (a, b) => a.n.localeCompare(b.n),
+  cmc: (a, b) => a.cmc - b.cmc || a.n.localeCompare(b.n),
+  rareza: (a, b) => RAREZA_ORDEN[b.r] - RAREZA_ORDEN[a.r] || a.n.localeCompare(b.n),
+  precio: (a, b) => (b.pu ?? -1) - (a.pu ?? -1) || a.n.localeCompare(b.n),
+};
 function renderCartasView() {
   const body = $('#cartas-view');
   if (!body) return;
-  const tipo = local.ct ?? '*', ccmc = local.ccmc ?? '*', cmec = local.cmec ?? '*', cer = local.cer ?? '*';
+  const tipo = local.ct ?? '*', ccmc = local.ccmc ?? '*', cmec = local.cmec ?? '*', cer = local.cer ?? '*', csort = local.csort ?? 'nombre';
   const tipos = CARTAS_TIPOS.filter(([tb]) => CARDS.some(c => c.tb === tb));
   const mecs = D.glosario.map(g => g.nombre);
+  const hasPrices = CARDS.some(c => c.pu != null);
   const passTipo = c => tipo === '*' || c.tb === tipo;
   const passCmc = c => ccmc === '*' || (ccmc === '6' ? c.cmc >= 6 : c.cmc === +ccmc);
   const passMec = c => cmec === '*' || (c.mec || []).includes(cmec);
   const passEvRem = c => cer === '*' || (cer === 'ev' ? c.ev : !!c.inter);
-  const list = CARDS.filter(c => passes(c) && passTipo(c) && passCmc(c) && passMec(c) && passEvRem(c));
+  const list = CARDS.filter(c => passes(c) && passTipo(c) && passCmc(c) && passMec(c) && passEvRem(c))
+    .sort(CARTAS_SORT[csort] || CARTAS_SORT.nombre);
   body.innerHTML = `<div class="sec-h"><span class="sec-ic" style="--ic:var(--accent)">${icon('cartas')}</span>
-      <div><h2>Todas las cartas</h2><p>${list.length} de ${CARDS.length} cartas del set con los filtros actuales</p></div></div>
+      <div><h2>Todas las cartas</h2><p>${list.length} de ${CARDS.length} cartas del set con los filtros actuales${hasPrices ? '' : ' · precios no disponibles en esta exportación (corré los notebooks de nuevo para traerlos de Scryfall)'}</p></div></div>
     <div class="sec-b">
       <div class="cartas-filters">
         <div class="f-group"><span class="f-label">Tipo</span>${chips('ct', [{v: '*', label: 'Todos'}, ...tipos.map(([tb, label]) => ({v: tb, label}))])}</div>
         <div class="f-group"><span class="f-label">Coste (CMC)</span>${chips('ccmc', [{v: '*', label: 'Todos'}, ...['0', '1', '2', '3', '4', '5'].map(n => ({v: n, label: n})), {v: '6', label: '6+'}])}</div>
         <div class="f-group"><span class="f-label">Mecánica</span>${chips('cmec', [{v: '*', label: 'Todas'}, ...mecs.map(m => ({v: m, label: m}))])}</div>
         <div class="f-group"><span class="f-label">Evasión / interacción</span>${chips('cer', [{v: '*', label: 'Todas'}, {v: 'ev', label: 'Solo evasivas'}, {v: 'inter', label: 'Solo con interacción'}])}</div>
+        <div class="f-group"><span class="f-label">Ordenar por</span>${chips('csort', [{v: 'nombre', label: 'Nombre'}, {v: 'cmc', label: 'Coste'}, {v: 'rareza', label: 'Rareza'}, {v: 'precio', label: 'Precio'}])}</div>
       </div>
-      ${grid(list, c => `${rar(c.r)}${c.pt ? ` · ${esc(c.pt)}` : ''} · coste ${c.cmc}`, {id: 'cartas', limit: 60})}
+      ${grid(list, c => `${rar(c.r)}${c.pt ? ` · ${esc(c.pt)}` : ''} · coste ${c.cmc}${c.pu != null ? ` · $${c.pu.toFixed(2)}` : ''}`, {id: 'cartas', limit: 60})}
     </div>`;
   cartasRendered = true;
 }
@@ -684,7 +694,7 @@ function wireDialog() {
     const big = imgSize(c.img, 'large');
     $('#dlg-body').innerHTML = `${c.img ? `<div class="dlg-img"><img src="${esc(c.img)}" srcset="${esc(c.img)} 488w, ${esc(big)} 672w" sizes="320px" alt="${esc(c.n)}" width="488" height="680"></div>` : ''}
       <div class="dlg-info"><h2>${esc(c.n)}</h2>${mana(c.c)}<div class="dlg-type">${esc(c.t)}</div><div class="dlg-text">${txt || '—'}</div>
-      <div class="dlg-meta">${colorCell(c.k)} ${rar(c.r)}${c.pt ? `<span class="tag" style="--tc:var(--text-2)">${esc(c.pt)}</span>` : ''}${tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
+      <div class="dlg-meta">${colorCell(c.k)} ${rar(c.r)}${c.pt ? `<span class="tag" style="--tc:var(--text-2)">${esc(c.pt)}</span>` : ''}${c.pu != null ? `<span class="tag" style="--tc:var(--good)">$${c.pu.toFixed(2)}</span>` : ''}${tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
       <p style="margin-top:14px"><a href="${esc(c.u)}" target="_blank" rel="noopener">Ver en Scryfall ↗</a></p></div>`;
     $('#dlg-pos').textContent = list.length > 1 ? `${idx + 1} / ${list.length}` : '';
     $$('[data-nav]', dlg).forEach(b => { b.disabled = list.length < 2; });
