@@ -47,6 +47,7 @@ const ICONS = {
   construccion:'<rect x="3" y="14" width="8" height="6" rx="1"/><rect x="13" y="14" width="8" height="6" rx="1"/><rect x="8" y="6" width="8" height="6" rx="1"/>',
   mecanicas:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
   bombas:'<path d="m3 8 4 4 5-7 5 7 4-4-2 11H5z"/>',
+  sinergias:'<rect x="3" y="8" width="8" height="8" rx="4"/><rect x="13" y="8" width="8" height="8" rx="4"/><path d="M11 12h2"/>',
   probabilidades:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.2"/><circle cx="16" cy="16" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="16" cy="8" r="1.2"/><circle cx="8" cy="16" r="1.2"/>',
   tag:'<path d="M6 3h12v18l-6-4-6 4z"/>',
   bolt:'<path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-2-1-3-1-5 2 1 3 3 3 6a5 5 0 0 1-10 0c0-5 3-6 5-10z"/>',
@@ -251,7 +252,7 @@ const SECTIONS = [
       rares.map(c => ({color: c.k, rareza: c.r, nombre: c.n, costo: c.c, inter: c.inter, dmg: c.dmg === '∞' ? null : c.dmg, mata: c.mata})), {cardKey: 'nombre'}) + '</div></details>';
     return h;
   }},
-{ id: 'trucos', nav: 'Trucos combate', title: 'Trucos de combate', sub: 'Qué puede tener el rival con maná abierto', color: 'var(--W)',
+{ id: 'trucos', nav: 'Instants', title: 'Instants', sub: 'Qué puede tener el rival con maná abierto', color: 'var(--W)',
   render() {
     const cur = local.tr ?? '*';
     const all = CARDS.filter(c => (c.instant || c.prep) && (c.r === 'common' || c.r === 'uncommon'));
@@ -276,7 +277,7 @@ const SECTIONS = [
       '</div><div><h3>Criatura típica por coste</h3>' + table([
         {key: 'coste', label: 'Coste', num: true, render: v => v >= 6 ? '6+' : v}, {key: 'criaturas', label: 'Criaturas', num: true},
         {key: 'fuerza', label: 'Fuerza media', num: true}, {key: 'resistencia', label: 'Resistencia media', num: true},
-        {key: 'pct_evasivas', label: '% evasivas', num: true}], T.tamano, {bars: ['criaturas']}) + '</div></div>' +
+        {key: 'pct_evasivas', label: '% evasivas', num: true, tip: 'Criaturas con vuelo, amenaza, arrollar o imbloqueables: cuesta bloquearlas o el bloqueo no las detiene del todo'}], T.tamano, {bars: ['criaturas']}) + '</div></div>' +
       '<h3>Curva de criaturas C/U por color</h3><div class="minis">' + T.curva.filter(r => passColor(r.color)).map(r => {
         const ks = ['1', '2', '3', '4', '5', '6+'], top = Math.max(...T.curva.flatMap(x => ks.map(k => x[k] || 0))) || 1;
         const tot = ks.reduce((s, k) => s + (r[k] || 0), 0);
@@ -323,7 +324,7 @@ const SECTIONS = [
       '<h3>Tips generales</h3><ul>' +
       `<li>Priorizá removal duro sobre trucos: hay ${removalTotal} cartas de removal C/U en el set, concentradas en negro y rojo (ver <a href="#colores">Colores</a>).</li>` +
       '<li>No bajes de 15 criaturas salvo que tu mazo sea muy controlador, con mucho removal para compensar.</li>' +
-      '<li>Dejá 1–2 espacios para trucos de combate o removal instantáneo barato: ganan combates que parecían perdidos (ver <a href="#trucos">Trucos combate</a>).</li>' +
+      '<li>Dejá 1–2 espacios para trucos de combate o removal instantáneo barato: ganan combates que parecían perdidos (ver <a href="#trucos">Instants</a>).</li>' +
       '<li>Si vas a splashear, contá tus fuentes de maná de ese color por separado: menos de 3 fuentes para una sola carta rara vez vale la pena.</li>' +
       '</ul>';
   }},
@@ -343,6 +344,36 @@ const SECTIONS = [
     return howto(`<p>Raras y míticas ordenadas por una <b>heurística simple</b>: planeswalker (+4), removal (+2 a +4), roba cartas (+1), evasión (+1), estadísticas eficientes para su coste (hasta +2), efectos que se repiten (+1) y crear criaturas (+1).</p>
 <p>No es un rating de expertos: sirve para <b>no pasar por alto</b> ninguna carta que gane partidas sola.</p>`) +
       grid(list, c => `${rar(c.r)} · puntaje ${c.score}`, {id: 'bomb', limit: 24});
+  }},
+{ id: 'sinergias', nav: 'Sinergias', title: 'Sinergias de tus bombas', sub: 'Cómo construir alrededor de las cartas con más puntaje', color: 'var(--M)',
+  render() {
+    const top = CARDS.filter(c => (c.r === 'rare' || c.r === 'mythic') && c.tb !== 'Land').sort((a, b) => b.score - a.score).slice(0, 3);
+    if (!top.length) return '<p class="empty">No hay suficientes raras/míticas para sugerir sinergias.</p>';
+    const cu = c => c.r === 'common' || c.r === 'uncommon';
+    const listOf = cards => cards.length
+      ? `<p class="syn-list" data-list="${esc(cards.map(c => c.n).join('|'))}">${cards.slice(0, 6).map(c => `<button class="cn" data-card="${esc(c.n)}">${esc(c.n)}</button>`).join(', ')}</p>`
+      : '<p class="empty">Ninguna en C/U de su color.</p>';
+    return howto(`<p>Para cada una de tus 3 cartas con más puntaje (ver <a href="#bombas">Bombas</a>), esto arma un mazo <b>alrededor</b> de ella: qué necesita para sobrevivir hasta hacer efecto, y qué cartas C/U de su color comparten mecánica, la protegen o cierran la partida mientras ella trabaja. Las listas de "comparte mecánica" salen de las mismas etiquetas del glosario (ver <a href="#mecanicas">Mecánicas</a>).</p>`) +
+      top.map(bomb => {
+        const bombColors = bomb.par ? bomb.par.split('') : [bomb.k];
+        const sameColor = c => c.n !== bomb.n && (bombColors.includes(c.k) || (c.par && c.par.split('').some(x => bombColors.includes(x))));
+        const mec = bomb.mec?.length ? CARDS.filter(c => cu(c) && sameColor(c) && c.mec?.some(m => bomb.mec.includes(m))) : [];
+        const removal = CARDS.filter(c => cu(c) && sameColor(c) && ['removal', 'masivo', 'daño', 'pelea'].includes(c.inter));
+        const evasive = CARDS.filter(c => cu(c) && sameColor(c) && c.ev);
+        const tips = [];
+        if (/Planeswalker/.test(bomb.t)) tips.push('Es un <b>planeswalker</b>: lo importante es que sobreviva un turno para empezar a generar ventaja. Priorizá curva baja y removal para despejarle el camino, y no lo juegues sin nada en mesa que lo proteja.');
+        else if (bomb.ev) tips.push('Es una <b>amenaza evasiva</b>: un plan más agresivo aprovecha mejor el reloj que impone.');
+        if (bomb.inter) tips.push(`Ya trae su propio ${(INTER[bomb.inter]?.[0] || 'removal').toLowerCase()}, así que no hace falta sobrecargar el mazo con más de eso — dejale espacio a otras piezas.`);
+        if (bomb.robo) tips.push('También te da ventaja de cartas por su cuenta, lo que empuja hacia un plan más lento y controlador.');
+        return `<div class="synergy"><div class="synergy-card">${tile(bomb, c => `${rar(c.r)} · puntaje ${c.score}`)}</div>
+          <div class="synergy-body"><h3>${bomb.par ? pairPips(bomb.par) : pip(bomb.k)} ${esc(bomb.n)}</h3>
+          <ul>${tips.map(t => `<li>${t}</li>`).join('')}</ul>
+          <p class="syn-label">Comparte mecánica en su color</p>${listOf(mec)}
+          <p class="syn-label">Removal en su color para protegerla</p>${listOf(removal)}
+          <p class="syn-label">Amenazas evasivas para cerrar mientras trabaja</p>${listOf(evasive)}
+          </div></div>`;
+      }).join('') +
+      '<p class="empty">Al armar el mazo, priorizá en este orden: 1) suficiente removal para llegar a su turno, 2) tierras/fixing para su color, 3) cuerpos baratos que la protejan o presionen mientras ella cierra la partida. Ver <a href="#construccion">Construcción recomendada</a>.</p>';
   }},
 { id: 'probabilidades', nav: 'Probabilidades', title: 'Qué esperar de 6 sobres', sub: 'Probabilidades aproximadas del prerelease', color: 'var(--good)',
   render() {
@@ -369,9 +400,10 @@ function mountShell() {
   $('#hero').innerHTML = `<div class="hero-top"><img src="${esc(S.icon)}" alt="" width="60" height="60">
     <div><h1>${esc(S.name)} <span>· Guía de Limited</span></h1>
     <p>Sale el ${esc(S.released_at || '¿?')} · ${n} cartas · datos de Scryfall del ${esc(D.generado)}</p>
-    <div class="pips">${['W','U','B','R','G'].map(pip).join('')}</div></div></div>` +
-    (destacadas.length ? `<div class="hero-cards"><span class="hc-label">Cartas destacadas del set</span>
-      <div class="hero-cards-row" data-list="${esc(destacadas.map(c => c.n).join('|'))}">${destacadas.map(c => tile(c, x => `${rar(x.r)} · puntaje ${x.score}`)).join('')}</div></div>` : '') +
+    <div class="pips">${['W','U','B','R','G'].map(pip).join('')}</div></div>` +
+    (destacadas.length ? `<div class="hero-cards-row" data-tip="Cartas destacadas del set: rara/mítica de más puntaje" data-list="${esc(destacadas.map(c => c.n).join('|'))}">${destacadas.map(c =>
+      `<button class="hcard" type="button" data-card="${esc(c.n)}" aria-label="${esc(c.n)}"><img src="${esc(imgSize(c.img, 'small'))}" alt="" width="56" height="78" loading="lazy" decoding="async"></button>`).join('')}</div>` : '') +
+    `</div>` +
     `<div class="kpis">${K.map(k => `<div class="kpi"><span>${esc(k.label)}</span><b>${esc(k.valor)}</b><small>${esc(k.nota)}</small></div>`).join('')}</div>`;
 
   const secs = SECTIONS.filter(s => !s.when || s.when());
