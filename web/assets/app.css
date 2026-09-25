@@ -110,6 +110,7 @@ main{min-width:0;padding-top:20px;outline:0}
 #btn-sortdir svg{transition:transform .15s ease}
 #btn-sortdir[data-dir="desc"] svg{transform:rotate(180deg)}
 .side-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.filters .search{width:100%;min-width:0;margin-bottom:12px}
 
 @media (max-width:960px){
   .layout{grid-template-columns:1fr;padding:0 16px 80px}
@@ -118,7 +119,6 @@ main{min-width:0;padding-top:20px;outline:0}
         border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.25);
         transform:translateY(105%);transition:transform .22s ease;visibility:hidden}
   .side.open{transform:none;visibility:visible}
-  .side .search{width:100%;min-width:0;margin-bottom:12px}
   .scrim{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.45)}
 }
 
