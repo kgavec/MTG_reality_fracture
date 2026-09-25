@@ -47,6 +47,7 @@ const ICONS = {
   mecanicas:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
   bombas:'<path d="m3 8 4 4 5-7 5 7 4-4-2 11H5z"/>',
   probabilidades:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.2"/><circle cx="16" cy="16" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="16" cy="8" r="1.2"/><circle cx="8" cy="16" r="1.2"/>',
+  stat:'<path d="M4 20V11M10 20V4M16 20v-6"/><path d="M2 20h20"/>',
 };
 
 /* ---------- estado ---------- */
@@ -166,10 +167,11 @@ const SECTIONS = [
     }
     return h;
   }},
-{ id: 'resumen', nav: 'Resumen', title: 'Lo esencial en 60 segundos', sub: 'Conclusiones calculadas desde los datos del set', color: 'var(--gold)',
+{ id: 'resumen', nav: 'Resumen', title: 'Lo esencial en 60 segundos', sub: 'Conclusiones calculadas desde los datos del set · C/U = comunes e infrecuentes', color: 'var(--gold)',
   render: () => howto(`<p>Todo el reporte mira sobre todo <b>comunes e infrecuentes (C/U)</b>: en 6 sobres abres ~40 comunes y ~20 infrecuentes, pero solo 6–7 raras. Tu mazo se construye con C/U.</p>
 <p>Usa los <b>filtros</b> (color, rareza, búsqueda; tecla <b>/</b>) para enfocar todo el reporte, y <b>haz clic en cualquier carta o nombre</b> para ver su ficha. Con ← → recorres las cartas de esa lista.</p>`) +
-    `<div class="insights">${D.insights.map(i => `<div class="ins"><span class="ii">${i.iconos.map(pip).join('')}</span><div><b>${esc(i.titulo)}</b><span>${esc(i.texto)}</span></div></div>`).join('')}</div>` },
+    (D.novedades?.length ? `<div class="callout novedades"><b>Novedades de ${esc(D.set.name)}:</b> mecánicas nuevas, no vistas antes en Magic — ${D.novedades.map(n => `<b>${esc(n.nombre)}</b> (${esc(n.texto)})`).join(' · ')}</div>` : '') +
+    `<div class="insights">${D.insights.map(i => `<div class="ins"><span class="ii">${i.iconos.length ? i.iconos.map(pip).join('') : icon('stat')}</span><div><b>${esc(i.titulo)}</b><span>${esc(i.texto)}</span></div></div>`).join('')}</div>` },
 { id: 'colores', nav: 'Colores', title: 'Perfil de colores', sub: 'Qué ofrece cada color en comunes e infrecuentes', color: 'var(--U)',
   render() {
     const T = D.tablas;
@@ -312,7 +314,7 @@ function mountShell() {
   const K = D.kpis;
   $('#hero').innerHTML = `<div class="hero-top"><img src="${esc(S.icon)}" alt="" width="60" height="60">
     <div><h1>${esc(S.name)} <span>· Guía de Limited</span></h1>
-    <p>Código ${esc(S.code.toUpperCase())} · sale el ${esc(S.released_at || '¿?')} · ${n} cartas · datos de Scryfall del ${esc(D.generado)}</p>
+    <p>Sale el ${esc(S.released_at || '¿?')} · ${n} cartas · datos de Scryfall del ${esc(D.generado)}</p>
     <div class="pips">${['W','U','B','R','G'].map(pip).join('')}</div></div></div>
     <div class="kpis">${K.map(k => `<div class="kpi"><span>${esc(k.label)}</span><b>${esc(k.valor)}</b><small>${esc(k.nota)}</small></div>`).join('')}</div>`;
 

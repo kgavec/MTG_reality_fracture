@@ -179,6 +179,7 @@ h3 .count{font-weight:500;color:var(--text-3);font-size:13px}
 .ins{display:flex;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface-2)}
 .ins .ii{flex:none;display:flex;gap:2px;padding-top:2px}
 .ins .ii .ms,.ins .ii .multi{width:20px;height:20px}
+.ins .ii svg{width:20px;height:20px;color:var(--text-3)}
 .ins b{display:block;font-size:12px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em}
 .ins span{font-size:14.5px}
 
