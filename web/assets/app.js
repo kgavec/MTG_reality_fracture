@@ -44,10 +44,12 @@ const ICONS = {
   removal:'<circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="2"/>',
   trucos:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
   combate:'<path d="M14.5 17.5 3 6V3h3l11.5 11.5M13 19l6-6M16 16l4 4M19 21l2-2"/><path d="M9.5 6.5 21 18v3h-3L6.5 9.5M5 14l-2 2 3 3 2-2"/>',
+  construccion:'<rect x="3" y="14" width="8" height="6" rx="1"/><rect x="13" y="14" width="8" height="6" rx="1"/><rect x="8" y="6" width="8" height="6" rx="1"/>',
   mecanicas:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
   bombas:'<path d="m3 8 4 4 5-7 5 7 4-4-2 11H5z"/>',
   probabilidades:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r="1.2"/><circle cx="16" cy="16" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="16" cy="8" r="1.2"/><circle cx="8" cy="16" r="1.2"/>',
   stat:'<path d="M4 20V11M10 20V4M16 20v-6"/><path d="M2 20h20"/>',
+  tag:'<path d="M6 3h12v18l-6-4-6 4z"/>',
 };
 
 /* ---------- estado ---------- */
@@ -278,11 +280,52 @@ const SECTIONS = [
           <div class="cols-x">${ks.map(k => `<span>${k}</span>`).join('')}</div></div>`;
       }).join('') + '</div>';
   }},
+{ id: 'construccion', nav: 'Construcción', title: 'Construcción recomendada', sub: 'Proporciones de tierras, hechizos y curva para un mazo de 40', color: 'var(--G)',
+  render() {
+    const T = D.tablas;
+    const totalCriaturas = T.tamano.reduce((s, r) => s + r.criaturas, 0);
+    const sumaCmc = T.tamano.reduce((s, r) => s + r.criaturas * r.coste, 0);
+    const cmcMedio = (sumaCmc / (totalCriaturas || 1)).toFixed(1);
+    const tope = T.tamano[T.tamano.length - 1];
+    const fixingTotal = D.kpis.find(k => k.label === 'Mana fixing')?.valor ?? '?';
+    const removalTotal = D.kpis.find(k => k.label === 'Removal C/U')?.valor ?? '?';
+    const disp = T.arquetipos.map(a => a.disponibles), dispMin = Math.min(...disp), dispMax = Math.max(...disp);
+    const doradas = T.perfil.find(r => r.color === 'M');
+    return howto(`<p>Esto no sale de una fórmula fija: es la base clásica de Limited (17 tierras / 23 hechizos en 40 cartas) ajustada con los números reales de este set — su curva de criaturas, cuánto <i>fixing</i> hay y cuántas cartas jugables tiene cada par de colores.</p>`) +
+      '<h3>Mazo de 2 colores (la apuesta segura)</h3>' +
+      `<p>Cada par de colores tiene entre <b>${dispMin} y ${dispMax}</b> cartas C/U jugables disponibles (ver <a href="#arquetipos">Arquetipos</a>) — de sobra para tus 23 hechizos. Elegí el par por poder y plan de juego, no por miedo a quedarte corto de cartas.</p>` +
+      table([{key: 'parte', label: 'Parte del mazo'}, {key: 'cant', label: 'Cantidad'}, {key: 'nota', label: 'Nota', txt: true}], [
+        {parte: 'Tierras', cant: '17', nota: '8–9 de tu color principal y el resto del secundario; ajustá según cuántos símbolos dobles tenga cada uno'},
+        {parte: 'Hechizos totales', cant: '23', nota: ''},
+        {parte: '— Criaturas', cant: '15–17', nota: 'la base del mazo'},
+        {parte: '— Removal / trucos / otros', cant: '6–8', nota: 'priorizá removal duro sobre trucos de combate'},
+      ]) +
+      '<h3>Curva de maná recomendada</h3>' +
+      `<p>La criatura C/U promedio de este set cuesta <b>${cmcMedio}</b>, concentrada en 2 y 3 de coste (ver <a href="#combate">Combate y curva</a>). Una curva de 2 colores razonable:</p>` +
+      table([{key: 'coste', label: 'Coste'}, {key: 'cant', label: 'Criaturas'}, {key: 'nota', label: 'Nota', txt: true}], [
+        {coste: '1', cant: '0–2', nota: 'opcional: este set no tiene muchos 1-drops relevantes'},
+        {coste: '2', cant: '5–7', nota: 'tu turno más consistente'},
+        {coste: '3', cant: '5–6', nota: 'junto con 2, el pico de la curva'},
+        {coste: '4', cant: '3–5', nota: ''},
+        {coste: '5', cant: '2–3', nota: ''},
+        {coste: '6+', cant: '1–2', nota: `${tope.pct_evasivas}% de las criaturas de 6+ tienen evasión — son tus finishers`},
+      ]) +
+      '<h3>¿Tres colores?</h3>' +
+      `<p>El set tiene <b>${fixingTotal} cartas</b> de mana fixing (duales, landcycling, tokens Heartwood). Alcanza para un <b>splash liviano de 1–2 cartas fuertes</b> con 2–3 fuentes, pero armar un mazo de tres colores parejo (23 hechizos repartidos entre los tres) es arriesgado salvo que tu pool de fixing sea excepcional. Si vas a splashear, priorizá tierras duales comunes o landcycling antes que forzar un tercer color a la par de los otros dos.</p>` +
+      '<h3>¿Y monocolor?</h3>' +
+      `<p>No es la apuesta por defecto en este set: hay ${doradas?.cartas ?? 'varias'} cartas doradas que concentran buena parte del removal y la evasión, y cualquier par de dos colores ya tiene de sobra para 23 hechizos. Quedate en un solo color solo si abriste una cantidad excepcional de bombas y removal de ese color.</p>` +
+      '<h3>Tips generales</h3><ul>' +
+      `<li>Priorizá removal duro sobre trucos: hay ${removalTotal} cartas de removal C/U en el set, concentradas en negro y rojo (ver <a href="#colores">Colores</a>).</li>` +
+      '<li>No bajes de 15 criaturas salvo que tu mazo sea muy controlador, con mucho removal para compensar.</li>' +
+      '<li>Dejá 1–2 espacios para trucos de combate o removal instantáneo barato: ganan combates que parecían perdidos (ver <a href="#trucos">Trucos combate</a>).</li>' +
+      '<li>Si vas a splashear, contá tus fuentes de maná de ese color por separado: menos de 3 fuentes para una sola carta rara vez vale la pena.</li>' +
+      '</ul>';
+  }},
 { id: 'mecanicas', nav: 'Mecánicas', title: 'Mecánicas', sub: 'Glosario y en qué colores aparece cada tema', color: 'var(--U)',
   render() {
     const T = D.tablas, cols = COLORS.filter(k => T.mecanicas.some(r => r[k]));
     return howto(`<p>El glosario explica las mecánicas del set con el texto recordatorio de las propias cartas. La tabla cuenta en cuántas cartas aparece cada tema por color: te dice qué color empuja cada estrategia.</p>`) +
-      `<h3>Glosario</h3><div class="gloss">${D.glosario.map(g => `<div class="gl"><b>${pip(g.color)}${esc(g.nombre)}${g.cartas ? `<small>${g.cartas} cartas</small>` : ''}</b><p>${symbols(g.texto)}</p></div>`).join('')}</div>` +
+      `<h3>Glosario</h3><div class="gloss">${D.glosario.map(g => `<div class="gl"><b>${icon('tag')}${esc(g.nombre)}${g.cartas ? `<small>${g.cartas} cartas</small>` : ''}</b><p>${symbols(g.texto)}</p></div>`).join('')}</div>` +
       '<h3>Mecánicas por color</h3>' + table([{key: 'mecanica', label: 'Mecánica / tema'}, ...cols.map(k => ({key: k, label: COLOR_NAME[k], num: true})),
         {key: 'total', label: 'Total', num: true}], T.mecanicas, {heat: cols, bars: ['total']}) +
       `<details class="more"><summary>Keywords reconocidas por Scryfall (${T.keywords.length})</summary><div style="margin-top:10px">` +
