@@ -233,6 +233,7 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-nume
 .gloss{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
 .gl{border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;background:var(--surface-2)}
 .gl b{display:flex;gap:6px;align-items:center;font-size:14px}
+.gl b svg{width:15px;height:15px;flex:none;color:var(--text-3)}
 .gl b small{margin-left:auto;font-weight:500;color:var(--text-3);font-size:12px}
 .gl p{margin:6px 0 0;font-size:13.5px;color:var(--text-2)}
 
