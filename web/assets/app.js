@@ -156,7 +156,7 @@ const SECTIONS = [
     if (P.splash.length) h += `<h3>Candidatas a splash</h3><p class="empty">Cartas fuertes que piden un solo símbolo de un tercer color. Con 2–3 fuentes (duales, landcycling) suelen valer la pena.</p>` +
       table([{key: 'para', label: 'Para', render: v => pairPips(v)}, {key: 'splash', label: 'Color extra', render: v => colorCell(v)},
              colDefs.name(), colDefs.cost(), {key: 'peso', label: 'Peso', num: true}], P.splash, {cardKey: 'nombre'});
-    h += `<div class="callout">Arreglo de maná en tu pool: ${P.fixing.length ? P.fixing.map(n => `<button class="cn" data-card="${esc(n)}">${esc(n)}</button>`).join(', ') : 'ninguno'}</div>`;
+    h += `<div class="callout">Fixing en tu pool: ${P.fixing.length ? P.fixing.map(n => `<button class="cn" data-card="${esc(n)}">${esc(n)}</button>`).join(', ') : 'ninguno'}</div>`;
     const cnt = Object.fromEntries(P.cartas.map(x => [x.id, x]));
     const cards = P.cartas.map(x => CARDS[x.id]).sort((a, b) => cnt[b.id].peso - cnt[a.id].peso);
     for (const k of COLORS) {
@@ -187,9 +187,9 @@ const SECTIONS = [
       {key: 'removal_duro', label: 'Removal duro', num: true, tip: 'Destruye, exilia, -X/-X, el rival sacrifica o aura que anula: mata sin importar el tamaño'},
       {key: 'dano_pelea', label: 'Daño / pelea', num: true, tip: 'Daño directo o pelea: depende de la resistencia del objetivo'},
       {key: 'otra', label: 'Contra / rebote', num: true, tip: 'Contrahechizos, devolver a la mano o tapear'},
-      {key: 'trucos', label: 'Trucos', num: true, tip: 'Instantáneos que potencian o protegen a una criatura en combate'},
+      {key: 'trucos', label: 'Trucos combate', num: true, tip: 'Instantáneos que potencian o protegen a una criatura en combate'},
       {key: 'evasivas', label: 'Evasivas', num: true, tip: 'Criaturas con vuelo, amenaza, arrollar o imbloqueables'},
-      {key: 'robo', label: 'Roba cartas', num: true}, {key: 'fixing', label: 'Arreglo de maná', num: true},
+      {key: 'robo', label: 'Roba cartas', num: true}, {key: 'fixing', label: 'Fixing', num: true, tip: 'Cartas que ayudan a conseguir maná de otro color: tierras duales, landcycling, tokens que producen maná'},
       {key: 'cmc_medio', label: 'Coste medio criaturas', num: true, tip: 'Valor de maná medio de las criaturas'},
       {key: 'cartas', label: 'Cartas C/U', num: true}], perfil,
       {colorKey: 'color', heat: ['criaturas', 'removal_duro', 'dano_pelea', 'otra', 'trucos', 'evasivas', 'robo', 'fixing']}) +
@@ -238,13 +238,13 @@ const SECTIONS = [
       rares.map(c => ({color: c.k, rareza: c.r, nombre: c.n, costo: c.c, inter: c.inter, dmg: c.dmg === '∞' ? null : c.dmg, mata: c.mata})), {cardKey: 'nombre'}) + '</div></details>';
     return h;
   }},
-{ id: 'trucos', nav: 'Trucos', title: 'Hoja de trucos', sub: 'Qué puede tener el rival con maná abierto', color: 'var(--W)',
+{ id: 'trucos', nav: 'Trucos combate', title: 'Trucos de combate', sub: 'Qué puede tener el rival con maná abierto', color: 'var(--W)',
   render() {
     const cur = local.tr ?? '*';
     const all = CARDS.filter(c => (c.instant || c.prep) && (c.r === 'common' || c.r === 'uncommon'));
     const bucket = c => c.cmc >= 4 ? '4' : String(c.cmc);
     const sel = all.filter(c => cur === '*' || bucket(c) === cur).sort((a, b) => COLORS.indexOf(a.k) - COLORS.indexOf(b.k) || a.cmc - b.cmc);
-    return howto(`<p>Todo lo que se puede jugar <b>a velocidad de instantáneo</b> en comunes e infrecuentes: trucos, removal instantáneo, contrahechizos y criaturas con flash.</p>
+    return howto(`<p>Todo lo que se puede jugar <b>a velocidad de instantáneo</b> en comunes e infrecuentes: trucos de combate, removal instantáneo, contrahechizos y criaturas con flash.</p>
 <p>Las cartas <b>Prepare</b> aparecen si su hechizo es instantáneo: mientras la criatura esté preparada, el rival puede lanzarlo.</p><p><b>En la mesa:</b> si el rival ataca raro y deja maná abierto, filtra por <b>maná abierto</b> y por sus colores para ver qué puede tener.</p>`) +
       chips('tr', [{v: '*', label: 'Cualquier coste'}, {v: '1', label: '1 maná'}, {v: '2', label: '2 maná'}, {v: '3', label: '3 maná'}, {v: '4', label: '4+ maná'}]) +
       table([colDefs.color, {key: 'cmc', label: 'Coste', num: true, tip: 'Tierras que necesita abiertas'}, colDefs.cost(), colDefs.name(), colDefs.rarity(),
@@ -325,7 +325,7 @@ function mountShell() {
       <button class="icon-btn sec-toggle" type="button" aria-expanded="true" aria-controls="${s.id}-b" aria-label="Plegar sección"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></div>
     <div class="sec-b pending" id="${s.id}-b"></div></section>`).join('');
   $('#foot').innerHTML = `Datos e imágenes: <a href="https://scryfall.com" target="_blank" rel="noopener">Scryfall</a>. Magic: The Gathering © Wizards of the Coast. Contenido no oficial.
-    Las etiquetas (removal, trucos, mecánicas) se calculan leyendo el texto de las cartas y pueden fallar con redacciones poco comunes.` +
+    Las etiquetas (removal, trucos de combate, mecánicas) se calculan leyendo el texto de las cartas y pueden fallar con redacciones poco comunes.` +
     (D.fuentes?.length ? `<br>Contexto: ${D.fuentes.map(f => `<a href="${esc(f.u)}" target="_blank" rel="noopener">${esc(f.t)}</a>`).join(' · ')}` : '');
 
   // filtros

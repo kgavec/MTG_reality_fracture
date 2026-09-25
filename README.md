@@ -2,7 +2,9 @@
 
 Notebooks (DataCamp DataLab) que descargan datos de [Scryfall](https://scryfall.com) y generan una **guía de Limited/prerelease** como sitio estático para GitHub Pages.
 
-**Sitio:** `https://<tu-usuario>.github.io/mtg-limited/` · un set concreto: `?set=fra`
+**Sitio en vivo:** https://kgavec.github.io/MTG_reality_fracture
+
+Ahora mismo publica la guía de *Reality Fracture*. El código `fra` que se ve en el título y en la URL (`?set=fra`) no se escribe a mano: sale de los metadatos del set que devuelve Scryfall (`meta["code"]`) al generar `docs/data/fra.json`. Si el repo llega a tener más de un set generado, `?set=<código>` permite elegir cuál mostrar; `docs/data/sets.json` guarda cuál es el que se ve por defecto.
 
 ## Estructura
 
