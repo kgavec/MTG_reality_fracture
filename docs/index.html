@@ -37,11 +37,6 @@
     </a>
     <nav class="modetabs" id="modetabs" aria-label="Vista"></nav>
     <span class="grow"></span>
-    <label class="search only-desktop">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="q" type="search" placeholder="Buscar carta o texto" autocomplete="off" aria-label="Buscar carta o texto">
-      <kbd>/</kbd>
-    </label>
     <button class="icon-btn" id="btn-filters" aria-label="Filtros" aria-controls="side" aria-expanded="false">
       <svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg><span class="badge" id="filter-badge" hidden></span>
     </button>
@@ -58,9 +53,10 @@
     <nav class="toc" id="toc" aria-label="Secciones"></nav>
     <div class="filters" id="filters" hidden>
       <div class="f-title">Filtros <button class="link" id="btn-reset" type="button">Limpiar</button></div>
-      <label class="search only-mobile">
+      <label class="search">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q2" type="search" placeholder="Buscar carta o texto" autocomplete="off" aria-label="Buscar carta o texto">
+        <input id="q" type="search" placeholder="Buscar carta o texto" autocomplete="off" aria-label="Buscar carta o texto">
+        <kbd>/</kbd>
       </label>
       <div class="f-group"><span class="f-label">Color</span><div class="f-row" id="f-color"></div></div>
       <div class="f-group"><span class="f-label">Rareza</span><div class="f-row" id="f-rarity"></div></div>

@@ -469,7 +469,7 @@ function mountShell() {
   // filtros (solo tienen efecto real en la vista Spoiler; ver passes()/passColor())
   $('#f-color').innerHTML = COLORS.map(k => `<button class="tog sq" type="button" data-fk="${k}" aria-pressed="${state.k.has(k)}" aria-label="${COLOR_NAME[k]}" data-tip="${COLOR_NAME[k]}">${pip(k)}</button>`).join('');
   $('#f-rarity').innerHTML = RARITIES.map(r => `<button class="tog" type="button" data-fr="${r}" aria-pressed="${state.r.has(r)}">${rar(r)}</button>`).join('');
-  $('#q').value = $('#q2').value = state.q;
+  $('#q').value = state.q;
 
   const tipos = CARTAS_TIPOS.filter(([tb]) => CARDS.some(c => c.tb === tb));
   $('#f-tipo').innerHTML = [{v: '*', label: 'Todos'}, ...tipos.map(([tb, label]) => ({v: tb, label}))]
@@ -607,9 +607,8 @@ function wire(secs) {
     $$('[data-fer]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.fer === local.cer)));
     rerender();
   });
-  const onQ = debounce(v => { state.q = v.trim().toLowerCase(); $('#q').value = $('#q2').value = v; writeURL(); rerender(); }, 160);
+  const onQ = debounce(v => { state.q = v.trim().toLowerCase(); $('#q').value = v; writeURL(); rerender(); }, 160);
   $('#q').addEventListener('input', e => onQ(e.target.value));
-  $('#q2').addEventListener('input', e => onQ(e.target.value));
   $('#f-tipo').addEventListener('change', e => { local.ct = e.target.value; rerender(); });
   $('#f-cmc').addEventListener('change', e => { local.ccmc = e.target.value; rerender(); });
   $('#f-mec').addEventListener('change', e => { local.cmec = e.target.value; rerender(); });
@@ -622,7 +621,7 @@ function wire(secs) {
   });
   $('#btn-reset').addEventListener('click', () => {
     state.k = new Set(COLORS); state.r = new Set(RARITIES); state.q = '';
-    $('#q').value = $('#q2').value = '';
+    $('#q').value = '';
     $$('[data-fk],[data-fr]').forEach(b => b.setAttribute('aria-pressed', 'true'));
     local.ct = local.ccmc = local.cmec = '*'; local.cer = '*'; local.csort = 'nombre'; local.csortdir = 'asc';
     $('#f-tipo').value = $('#f-cmc').value = $('#f-mec').value = '*'; $('#f-sort').value = 'nombre';
@@ -693,7 +692,10 @@ function wire(secs) {
   // Atajos
   document.addEventListener('keydown', e => {
     if (e.key === '/' && !/INPUT|TEXTAREA/.test(document.activeElement.tagName) && !$('#card-dlg').open) {
-      e.preventDefault(); (matchMedia('(max-width:960px)').matches ? (openSide(), $('#q2')) : $('#q')).focus();
+      e.preventDefault();
+      if (state.view !== 'cartas') setMode('cartas');
+      if (matchMedia('(max-width:960px)').matches) openSide();
+      $('#q').focus();
     }
     if (e.key === 'Escape') closeSide();
   });
